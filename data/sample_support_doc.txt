@@ -1,0 +1,242 @@
+TECHGEAR ELECTRONICS - CUSTOMER SUPPORT KNOWLEDGE BASE
+
+==================================================
+PRODUCT INFORMATION
+==================================================
+
+SmartWatch Pro X1
+-----------------
+The SmartWatch Pro X1 is our flagship wearable device featuring:
+- 1.4" AMOLED display with always-on capability
+- 7-day battery life on a single charge
+- Water resistance up to 50 meters (5 ATM)
+- Built-in GPS and heart rate monitoring
+- Compatible with iOS 14+ and Android 10+
+- Available in Black, Silver, and Rose Gold
+
+Price: $299.99
+Warranty: 2 years manufacturer warranty
+
+Wireless Earbuds Elite
+----------------------
+Premium wireless earbuds with active noise cancellation:
+- Up to 8 hours playback per charge
+- 24 hours total with charging case
+- IPX7 water resistance
+- Touch controls for music and calls
+- Fast charging: 15 minutes = 2 hours playback
+- Bluetooth 5.2 connectivity
+
+Price: $149.99
+Warranty: 1 year manufacturer warranty
+
+==================================================
+SHIPPING & DELIVERY
+==================================================
+
+Shipping Options:
+- Standard Shipping (5-7 business days): FREE on orders over $50
+- Express Shipping (2-3 business days): $15.99
+- Overnight Shipping (1 business day): $29.99
+
+International Shipping:
+We ship to over 50 countries worldwide. International shipping costs vary by destination and are calculated at checkout. Delivery times range from 7-21 business days depending on location.
+
+Order Tracking:
+Once your order ships, you will receive a tracking number via email. You can track your package at www.techgear.com/track or through the carrier's website directly.
+
+==================================================
+RETURNS & REFUNDS
+==================================================
+
+Return Policy:
+We accept returns within 30 days of purchase for a full refund. Items must be:
+- In original, unused condition
+- In original packaging with all accessories
+- Accompanied by proof of purchase
+
+Return Process:
+1. Contact customer support to initiate a return
+2. Receive your Return Authorization (RA) number
+3. Pack the item securely with the RA number visible
+4. Ship to our returns center (prepaid label provided)
+5. Refund processed within 5-7 business days of receipt
+
+Exceptions:
+- Opened software or digital products cannot be returned
+- Personalized or custom items are final sale
+- Items damaged due to misuse are not eligible for return
+
+==================================================
+WARRANTY & REPAIRS
+==================================================
+
+Warranty Coverage:
+All TechGear products come with a manufacturer warranty covering defects in materials and workmanship. The warranty does not cover:
+- Physical damage from drops or impacts
+- Water damage (except for water-resistant products used within specifications)
+- Damage from unauthorized repairs or modifications
+- Normal wear and tear
+
+How to File a Warranty Claim:
+1. Contact support with your order number and description of the issue
+2. Provide photos or videos of the defect if requested
+3. Receive a prepaid shipping label if repair/replacement is approved
+4. Ship the product to our service center
+5. Receive repaired or replacement product within 10-15 business days
+
+Extended Warranty:
+Purchase TechGear Care for extended coverage:
+- 1 additional year of warranty: $29.99
+- 2 additional years of warranty: $49.99
+- Includes accidental damage protection
+
+==================================================
+TROUBLESHOOTING
+==================================================
+
+SmartWatch Pro X1 Issues:
+
+Problem: Watch won't turn on
+Solution: 
+- Charge the watch for at least 30 minutes
+- Press and hold the power button for 10 seconds to force restart
+- If issue persists, contact support
+
+Problem: GPS not working accurately
+Solution:
+- Ensure location services are enabled on your phone
+- Update the watch firmware to the latest version
+- Perform GPS calibration in Settings > GPS > Calibrate
+- Use the watch outdoors with clear sky view for best results
+
+Problem: Battery draining quickly
+Solution:
+- Disable always-on display in Settings
+- Reduce screen brightness
+- Turn off unused sensors (GPS, heart rate monitoring when not needed)
+- Check for app updates that may improve battery efficiency
+
+Wireless Earbuds Elite Issues:
+
+Problem: Earbuds won't pair
+Solution:
+- Place earbuds in case and close lid for 10 seconds
+- Remove earbuds and they should enter pairing mode automatically
+- On your device, forget the earbuds from Bluetooth settings
+- Re-pair by selecting "Earbuds Elite" from available devices
+- If still not working, perform factory reset (see manual)
+
+Problem: Poor sound quality or connection drops
+Solution:
+- Ensure earbuds are within 30 feet of your device
+- Remove any obstacles between earbuds and device
+- Clean the earbud mesh with a soft, dry cloth
+- Update firmware through the TechGear app
+- Reset the earbuds to factory settings
+
+Problem: One earbud not working
+Solution:
+- Place both earbuds in the case for 30 seconds
+- Remove and check if both are working
+- Clean the charging contacts on both earbuds and case
+- Perform a factory reset if issue persists
+
+==================================================
+ACCOUNT & ORDERS
+==================================================
+
+Creating an Account:
+Visit www.techgear.com and click "Sign Up" to create an account. Benefits include:
+- Order tracking and history
+- Faster checkout
+- Exclusive member discounts
+- Early access to new products
+- Saved payment methods and addresses
+
+Modifying an Order:
+Orders can be modified within 1 hour of placement. After this time, the order enters processing and cannot be changed. Contact support immediately if you need to modify your order.
+
+Canceling an Order:
+Orders can be cancelled within 2 hours of placement if they haven't shipped. Once shipped, you'll need to follow the return process after receiving the item.
+
+==================================================
+PAYMENT & PRICING
+==================================================
+
+Accepted Payment Methods:
+- Credit Cards (Visa, Mastercard, American Express, Discover)
+- Debit Cards
+- PayPal
+- Apple Pay
+- Google Pay
+- TechGear Gift Cards
+
+Price Match Guarantee:
+We'll match any lower price from authorized retailers within 14 days of purchase. Submit a price match request with proof of the lower price, and we'll refund the difference.
+
+Promotional Codes:
+- Only one promotional code can be used per order
+- Codes cannot be combined with other offers unless specified
+- Codes are case-sensitive and must be entered exactly as shown
+- Expired codes cannot be honored
+
+==================================================
+CONTACT INFORMATION
+==================================================
+
+Customer Support Hours:
+Monday - Friday: 8:00 AM - 8:00 PM EST
+Saturday: 9:00 AM - 6:00 PM EST
+Sunday: 10:00 AM - 4:00 PM EST
+
+Contact Methods:
+- Phone: 1-800-TECHGEAR (1-800-832-4432)
+- Email: support@techgear.com
+- Live Chat: Available on website during business hours
+- Social Media: @TechGearOfficial (Twitter, Facebook, Instagram)
+
+Average Response Times:
+- Phone: Immediate during business hours
+- Live Chat: Under 2 minutes
+- Email: Within 24 hours
+- Social Media: Within 4 hours
+
+Mailing Address:
+TechGear Electronics
+Customer Service Department
+1234 Innovation Drive
+Tech Valley, CA 94025
+USA
+
+==================================================
+FREQUENTLY ASKED QUESTIONS
+==================================================
+
+Q: How do I update the firmware on my SmartWatch Pro X1?
+A: Download the TechGear app on your smartphone, connect your watch via Bluetooth, and navigate to Settings > Device > Firmware Update. Follow the on-screen instructions.
+
+Q: Are your products covered by warranty if purchased from third-party retailers?
+A: Yes, as long as the retailer is an authorized TechGear dealer. Purchases from unauthorized sellers may not be covered.
+
+Q: Can I use my SmartWatch Pro X1 while swimming?
+A: Yes, the watch is water-resistant up to 50 meters and can be used for swimming. However, it's not suitable for diving or high-pressure water activities.
+
+Q: How do I clean my Wireless Earbuds Elite?
+A: Use a soft, dry, lint-free cloth to wipe the earbuds. For the mesh, use a dry cotton swab gently. Never use liquids or cleaning solutions.
+
+Q: What should I do if I forgot my account password?
+A: Click "Forgot Password" on the login page, enter your email address, and follow the instructions sent to your email to reset your password.
+
+Q: Do you offer student or military discounts?
+A: Yes! Students receive 10% off with valid student ID verification. Military personnel and veterans receive 15% off with verification through ID.me.
+
+Q: How long does it take to process a refund?
+A: Once we receive your returned item, refunds are processed within 5-7 business days. The refund will appear in your account within 3-5 business days after processing, depending on your bank.
+
+Q: Can I purchase replacement parts?
+A: Yes, replacement parts such as charging cables, watch bands, and earbud tips are available on our website under Accessories.
+
+==================================================
+END OF DOCUMENT
+==================================================
