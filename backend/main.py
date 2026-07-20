@@ -8,6 +8,8 @@ import time
 import uuid
 import shutil
 import logging
+import threading
+from datetime import datetime, timezone
 from collections import defaultdict
 from fastapi import FastAPI, UploadFile, File, HTTPException, Request, Response, status
 from fastapi.middleware.cors import CORSMiddleware
@@ -29,12 +31,14 @@ app = FastAPI(
 # ----------------------------------------------------
 # 1. Environment & Configurable Limits
 # ----------------------------------------------------
-raw_origins = os.getenv("ALLOWED_ORIGINS", "http://localhost:5173,http://127.0.0.1:5173")
-allowed_origins = [origin.strip() for origin in raw_origins.split(",") if origin.strip()]
+raw_origins = os.getenv("ALLOWED_ORIGINS", "http://localhost:5173,http://127.0.0.1:5173").strip()
+allowed_origins = [origin.strip() for origin in raw_origins.split(",") if origin.strip() and origin.strip() != "*"]
+if not allowed_origins:
+    allowed_origins = ["http://localhost:5173", "http://127.0.0.1:5173"]
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=allowed_origins if allowed_origins else ["http://localhost:5173"],
+    allow_origins=allowed_origins,
     allow_credentials=True,
     allow_methods=["GET", "POST", "DELETE", "OPTIONS"],
     allow_headers=["*"],
@@ -48,7 +52,7 @@ if not api_key:
 # Configurable Limits
 MAX_UPLOAD_SIZE_MB = int(os.getenv("MAX_UPLOAD_SIZE_MB", "10"))
 MAX_FILE_SIZE_BYTES = MAX_UPLOAD_SIZE_MB * 1024 * 1024
-RATE_LIMIT_CHAT = int(os.getenv("RATE_LIMIT_CHAT", "30"))
+RATE_LIMIT_CHAT = int(os.getenv("RATE_LIMIT_CHAT", "10"))
 RATE_LIMIT_UPLOAD = int(os.getenv("RATE_LIMIT_UPLOAD", "10"))
 
 # ----------------------------------------------------
@@ -64,7 +68,46 @@ async def add_security_headers(request: Request, call_next):
     return response
 
 # ----------------------------------------------------
-# 3. Rate Limiting Middleware (Sliding Window Per IP)
+# 3. Global Daily API Request Quota (500 Req/Day Reset at UTC Midnight)
+# ----------------------------------------------------
+class DailyQuotaLimiter:
+    def __init__(self, daily_limit: int = 500):
+        self.daily_limit = daily_limit
+        self.lock = threading.Lock()
+        self.current_date = datetime.now(timezone.utc).date()
+        self.request_count = 0
+
+    def is_allowed(self) -> bool:
+        today = datetime.now(timezone.utc).date()
+        with self.lock:
+            if today != self.current_date:
+                self.current_date = today
+                self.request_count = 0
+            if self.request_count >= self.daily_limit:
+                return False
+            self.request_count += 1
+            return True
+
+DAILY_API_QUOTA = int(os.getenv("DAILY_API_QUOTA", "500"))
+daily_quota_limiter = DailyQuotaLimiter(daily_limit=DAILY_API_QUOTA)
+
+QUOTA_ENDPOINTS = ("/chat", "/upload", "/documents")
+
+@app.middleware("http")
+async def daily_quota_middleware(request: Request, call_next):
+    path = request.url.path
+    if any(path.startswith(prefix) for prefix in QUOTA_ENDPOINTS):
+        if not daily_quota_limiter.is_allowed():
+            client_ip = request.client.host if request.client else "127.0.0.1"
+            logger.warning(f"[DAILY QUOTA EXCEEDED] IP: {client_ip} exceeded daily quota on {path} | Limit: {daily_quota_limiter.daily_limit}")
+            return JSONResponse(
+                status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+                content={"detail": "Daily API quota exceeded. Please try again tomorrow."}
+            )
+    return await call_next(request)
+
+# ----------------------------------------------------
+# 4. Rate Limiting Middleware (Sliding Window Per IP)
 # ----------------------------------------------------
 class SlidingWindowRateLimiter:
     def __init__(self):
