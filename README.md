@@ -41,34 +41,7 @@ In customer support, accuracy is non-negotiable. Grounded responses prevent hall
 
 ---
 
-## 3. Architecture
-
-```mermaid
-graph TD
-    User([User / Support Agent]) -->|Interacts with UI| ReactFrontend[React Frontend]
-    ReactFrontend -->|HTTP REST Requests| FastAPIBackend[FastAPI Backend]
-    
-    subgraph Ingestion Pipeline
-        FastAPIBackend -->|Upload Binary File| DocProc[Document Processing & Validation]
-        DocProc -->|Layout-Aware Sectioning| Chunking[Chunking Engine]
-        Chunking -->|768-dim Vectors| Embeddings[Gemini / MiniLM Embeddings]
-        Embeddings -->|Index Chunks & Metadata| FAISS[(FAISS Vector Database)]
-    end
-    
-    subgraph Retrieval & Generation Pipeline
-        ReactFrontend -->|POST /chat| FastAPIBackend
-        FastAPIBackend -->|Query Decomposition| SubQueries[Sub-Query Processor]
-        SubQueries -->|Hybrid Vector + Lexical Search| FAISS
-        FAISS -->|Retrieve Top Context Chunks| ContextBuilder[XML Context Builder]
-        ContextBuilder -->|Grounded Context Prompt| Gemini[Google Gemini 2.5 Flash LLM]
-        Gemini -->|Synthesize Grounded Answer| GroundedResp[Grounded Response & Sources]
-        GroundedResp -->|JSON Payload| ReactFrontend
-    end
-```
-
----
-
-## 4. Technology Stack
+## 3. Technology Stack
 
 | Component | Technology | Description |
 | :--- | :--- | :--- |
@@ -83,21 +56,7 @@ graph TD
 
 ---
 
-## 5. Folder Structure
-
-```
-ClarifAI/
-│
-├── backend/
-├── frontend/
-├── data/
-├── README.md
-└── .env.example
-```
-
----
-
-## 6. Installation
+## 4. Installation
 
 ### Prerequisites
 - **Python**: `3.10` or higher
@@ -172,7 +131,7 @@ ClarifAI/
 
 ---
 
-## 7. Usage
+## 5. Usage
 
 1. **Upload Documents**: Drag & drop or select PDF, TXT, or Word files in the document upload card.
 2. **Document Ingestion**: ClarifAI validates file signatures, parses text into section boundaries, extracts language metadata, and generates vector embeddings automatically.
@@ -182,7 +141,7 @@ ClarifAI/
 
 ---
 
-## 8. Sample Use Cases
+## 6. Sample Use Cases
 
 - **Customer Support**: Instantly query product return policies, shipping terms, and warranty coverage.
 - **Knowledge Base Assistance**: Search across technical documentation, software specs, and troubleshooting guides.
@@ -193,38 +152,7 @@ ClarifAI/
 
 ---
 
-## 9. Security Highlights
-
-- **Magic-Byte Binary Validation**: Validates binary file signatures (`%PDF-`, `PK\x03\x04`, plain UTF-8 text) to reject disguised executables (`HTTP 415`).
-- **UUID Filename Storage**: Files are stored on disk with UUID prefixes (`{uuid}_{filename}`) to prevent name collision attacks while preserving original display filenames in the UI.
-- **Prompt Injection Mitigation**: Enforces strict XML boundaries (`<context>...</context>`) to isolate user inputs from model instructions.
-- **HTTP Security Headers**: Enforces `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, `X-XSS-Protection`, `HSTS`, and `Referrer-Policy`.
-- **Path Traversal Protection**: Enforces strict upload directory boundary checks (`is_safe_upload_path`).
-- **Sliding-Window Rate Limiting**: Protects `/chat` (30 req/min) and `/upload` (10 req/min) per IP address against DoS and quota exhaustion.
-
----
-
-## 10. Screenshots
-
-### Home Page
-
-![Home Page](screenshots/home.png)
-
-### Upload Documents
-
-![Upload Documents](screenshots/upload.png)
-
-### Chat Interface
-
-![Chat Interface](screenshots/chat.png)
-
-### Multilingual Questions
-
-![Multilingual Questions](screenshots/multilingual.png)
-
----
-
-## 11. Future Enhancements
+## 7. Future Enhancements
 
 - **OCR Support**: Integration with Tesseract / EasyOCR for extracting text from scanned PDF documents and images.
 - **Image Understanding**: Multimodal RAG support for querying diagrammatic user manuals and architecture diagrams.
@@ -235,6 +163,6 @@ ClarifAI/
 
 ---
 
-## 12. Author
+## 8. Author
 
 Developed by **Shubham Ghodke**. Built with FastAPI, LangChain, FAISS, Google Gemini, and React.
