@@ -206,17 +206,21 @@ ClarifAI/
 
 ## 10. Screenshots
 
-![ClarifAI Home Page](https://raw.githubusercontent.com/SamGhodke/ClarifAI/main/screenshots/home_page.png)  
-*Figure 1: ClarifAI Glassmorphic Landing Page & Dashboard*
+### Home Page
 
-![Document Upload Panel](https://raw.githubusercontent.com/SamGhodke/ClarifAI/main/screenshots/upload_panel.png)  
-*Figure 2: Interactive Drag & Drop Multi-Format Document Ingestion*
+![Home Page](screenshots/home.png)
 
-![Chat Interface & Citations](https://raw.githubusercontent.com/SamGhodke/ClarifAI/main/screenshots/chat_interface.png)  
-*Figure 3: Grounded Conversational Q&A with Exact Document Citations*
+### Upload Documents
 
-![Multilingual Q&A Demo](https://raw.githubusercontent.com/SamGhodke/ClarifAI/main/screenshots/multilingual_demo.png)  
-*Figure 4: Cross-Lingual Querying Across Multi-Language Knowledge Bases*
+![Upload Documents](screenshots/upload.png)
+
+### Chat Interface
+
+![Chat Interface](screenshots/chat.png)
+
+### Multilingual Questions
+
+![Multilingual Questions](screenshots/multilingual.png)
 
 ---
 
@@ -233,4 +237,4 @@ ClarifAI/
 
 ## 12. Author
 
-Developed by **Sam Ghodke**. Built with FastAPI, LangChain, FAISS, Google Gemini, and React.
+Developed by **Shubham Ghodke**. Built with FastAPI, LangChain, FAISS, Google Gemini, and React.
