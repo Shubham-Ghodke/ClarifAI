@@ -1,211 +1,236 @@
-# ClarifAI — RAG-Based Customer Support System
+# ClarifAI – RAG-Based Customer Support System
 
-> **ClarifAI** is a high-performance, enterprise-grade AI Document Assistant powered by Retrieval-Augmented Generation (RAG). It enables customer support teams and users to instantly upload multi-format documents (PDF, TXT, Word) and receive accurate, grounded, multi-lingual answers with precise source citations.
-
----
-
-## 🌟 Key Features
-
-- **⚡ Hybrid Dense-Sparse Retrieval**: Combines FAISS 768-dimensional dense vector embeddings with BM25 lexical keyword matching for high-precision document search.
-- **🌐 Multilingual & Cross-Lingual Support**: Seamlessly processes and answers queries across English, German, Spanish, French, Hindi, and Hinglish.
-- **📄 Layout-Aware Document Parsing**: Intelligently chunks documents by sections, headers, and lists to preserve context boundaries instead of arbitrary token cuts.
-- **🛡️ Enterprise Security Hardening**: Built-in sliding window rate limiting, magic-byte binary signature inspection, path traversal shielding, and prompt injection defense.
-- **🎯 Precise Source Citations & Highlighting**: Returns exact document source citations and auto-highlights verified answer passages in the UI.
-- **🎨 Glassmorphic Modern UI**: Responsive React interface featuring dark/light mode toggle, instant copy-to-clipboard, and interactive file upload queues.
-- **🤖 Fallback Architecture**: Automatically falls back from Google Gemini to local HuggingFace embeddings (`all-MiniLM-L6-v2`) if offline or API quota is reached.
+[![Python Version](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://www.python.org/)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.100%2B-009688.svg)](https://fastapi.tiangolo.com/)
+[![React](https://img.shields.io/badge/React-18.0-61DAFB.svg)](https://react.dev/)
+[![Vite](https://img.shields.io/badge/Vite-5.0-646CFF.svg)](https://vitejs.dev/)
+[![Google Gemini](https://img.shields.io/badge/LLM-Gemini--2.5--Flash-4285F4.svg)](https://ai.google.dev/)
+[![FAISS](https://img.shields.io/badge/VectorDB-FAISS-FF6F00.svg)](https://github.com/facebookresearch/faiss)
 
 ---
 
-## 🏗️ System Architecture
+## 1. Project Overview
 
+**ClarifAI** is a high-performance, production-ready Customer Support Assistant powered by **Retrieval-Augmented Generation (RAG)**. It allows enterprises, support teams, and users to upload multi-format documentation (PDFs, Word files, text manuals) and ask complex support questions in plain language.
+
+### The Problem It Solves
+Traditional customer support operations face high ticket volumes, escalating costs, and static FAQ portals that fail when users ask nuanced or multi-part questions. Generic LLMs often hallucinate policies, generate inaccurate specs, or leak unverified assumptions.
+
+### Why RAG Is Used
+RAG bridges the gap between static documents and generative AI. By fetching relevant chunks from an indexed vector database prior to answer generation, RAG grounds the LLM’s response strictly in proprietary organizational knowledge bases.
+
+### Why Grounded AI Responses Matter
+In customer support, accuracy is non-negotiable. Grounded responses prevent hallucinations, strictly enforce policy boundaries, and return exact document source attributions so support agents and customers can audit answer veracity instantly.
+
+---
+
+## 2. Features
+
+- **Retrieval-Augmented Generation (RAG)**: Combines dense vector similarity search with grounded LLM synthesis for precise, hallucination-free responses.
+- **Multi-Document Support**: Simultaneously indexes and retrieves answers across multiple uploaded knowledge base files.
+- **Multilingual Document Support**: Processes and indexes documents in English, German, Spanish, French, Hindi, and Hinglish.
+- **Multilingual Question Answering**: Understands user queries in various foreign languages and returns accurate, translated responses.
+- **Multi-Question Understanding**: Automatically decomposes compound user questions into distinct sub-queries and aggregates grounded answers for each.
+- **Hybrid Semantic Retrieval**: Blends FAISS 768-dimensional dense vector embeddings with BM25 lexical keyword matching for high-precision search.
+- **Source Attribution**: Transparently cites source document filenames alongside each generated answer block.
+- **Layout-Aware Document Processing**: Intelligently chunks documents by logical sections, headings, and lists to preserve semantic context.
+- **Drag & Drop Upload**: Interactive frontend drag-and-drop interface supporting batch upload of `.pdf`, `.docx`, `.txt`, and `.csv` files.
+- **UUID Filename Storage**: Internal UUID-prefixed file naming (`{uuid}_{filename}`) prevents storage collisions while exposing clean original filenames in UI and API outputs.
+- **Responsive UI**: Glassmorphic dark/light theme interface featuring real-time loading feedback, code snippet formatting, and quick copy actions.
+- **Production-Ready Backend**: Hardened FastAPI architecture featuring rate limiting, binary file signature inspection, CORS policies, and security headers.
+
+---
+
+## 3. Architecture
+
+```mermaid
+graph TD
+    User([User / Support Agent]) -->|Interacts with UI| ReactFrontend[React Frontend]
+    ReactFrontend -->|HTTP REST Requests| FastAPIBackend[FastAPI Backend]
+    
+    subgraph Ingestion Pipeline
+        FastAPIBackend -->|Upload Binary File| DocProc[Document Processing & Validation]
+        DocProc -->|Layout-Aware Sectioning| Chunking[Chunking Engine]
+        Chunking -->|768-dim Vectors| Embeddings[Gemini / MiniLM Embeddings]
+        Embeddings -->|Index Chunks & Metadata| FAISS[(FAISS Vector Database)]
+    end
+    
+    subgraph Retrieval & Generation Pipeline
+        ReactFrontend -->|POST /chat| FastAPIBackend
+        FastAPIBackend -->|Query Decomposition| SubQueries[Sub-Query Processor]
+        SubQueries -->|Hybrid Vector + Lexical Search| FAISS
+        FAISS -->|Retrieve Top Context Chunks| ContextBuilder[XML Context Builder]
+        ContextBuilder -->|Grounded Context Prompt| Gemini[Google Gemini 2.5 Flash LLM]
+        Gemini -->|Synthesize Grounded Answer| GroundedResp[Grounded Response & Sources]
+        GroundedResp -->|JSON Payload| ReactFrontend
+    end
 ```
-+-----------------------------------------------------------------------------------+
-|                                  USER INTERFACE                                   |
-|                        React.js + Vite + Modern CSS UI                            |
-+-----------------------------------------------------------------------------------+
-                                          |  HTTP REST Requests
-                                          v
-+-----------------------------------------------------------------------------------+
-|                                FASTAPI BACKEND API                                |
-|  - Rate Limiting Middleware (Sliding Window IP Bucket)                             |
-|  - HTTP Security Response Headers (CORS, HSTS, NoSniff, XSS, Frame Options)       |
-|  - Magic-Byte Binary File Signature Inspector                                      |
-|  - Upload Path Traversal & File Boundary Guards                                   |
-+-----------------------------------------------------------------------------------+
-                                          |
-                +-------------------------+-------------------------+
-                | Ingest & Index                                    | Query & Answer
-                v                                                   v
-+-------------------------------+               +-----------------------------------+
-|      DOCUMENT INGESTION       |               |     HYBRID RETRIEVAL ENGINE       |
-| - Layout-Aware Sectioning     |               | - Sub-Query Decomposition         |
-| - Text Extraction (PDF/Docx)  |               | - Semantic Vector Search (FAISS)  |
-| - Language Detection (LangId) |               | - BM25 Keyword Search & BM25F     |
-| - Metadata & Entity Indexing  |               | - Dynamic Hybrid Reciprocal Rank  |
-+-------------------------------+               | - Multi-Layer Re-ranker           |
-                |                               +-----------------------------------+
-                v                                                   |
-+-------------------------------+                                   | Grounded Context
-|      FAISS VECTOR STORE       |                                   v
-| - Gemini 768-dim Embeddings   |               +-----------------------------------+
-| - MiniLM Local Fallback       |               |        GENERATION & PROMPT        |
-| - UUID Storage Masking        |               | - Strict XML Context Boundaries   |
-| - Section Metadata DB         |               | - Grounded Gemini-2.5-Flash LLM   |
-+-------------------------------+               | - Auto-Highlighting & Citations   |
-                                                +-----------------------------------+
-```
 
 ---
 
-## 💻 Tech Stack
+## 4. Technology Stack
 
-### Backend
-- **Framework**: Python 3.10+, FastAPI, Uvicorn
-- **LLM**: Google Gemini 2.5 Flash (`google-generativeai`)
-- **Vector DB**: FAISS (Facebook AI Similarity Search)
-- **Embeddings**: Gemini `gemini-embedding-001` (Fallback: HuggingFace `all-MiniLM-L6-v2`)
-- **Document Parsers**: `pypdf`, `python-docx`, `langdetect`
-
-### Frontend
-- **Framework**: React 18, Vite
-- **Styling**: Modern Vanilla CSS Design Tokens (Dark / Light Theme Toggle)
-- **Icons**: Custom SVG Component Library
+| Component | Technology | Description |
+| :--- | :--- | :--- |
+| **Backend** | Python 3.10+, FastAPI, Uvicorn | Asynchronous REST API server with rate limiting and security middleware. |
+| **Frontend** | React 18, Vite | Modular UI component framework with instant HMR bundler. |
+| **LLM** | Google Gemini 2.5 Flash | Grounded answer generation and reasoning model. |
+| **Embeddings** | Gemini `gemini-embedding-001` / HuggingFace `all-MiniLM-L6-v2` | Primary 768-dim dense embeddings with offline local fallback. |
+| **Vector Database** | FAISS (Facebook AI Similarity Search) | High-speed dense vector similarity index. |
+| **Document Processing**| `pypdf`, `python-docx`, `langdetect` | PDF/Word text extractors and automatic language identifier. |
+| **Styling** | Vanilla CSS (Variables & Glassmorphism) | Modern tokenized design system with dark/light mode toggle. |
+| **Deployment Readiness**| Rate Limiting, Magic Bytes, Security Headers | Hardened HTTP response headers, magic-byte inspection, and sliding-window limits. |
 
 ---
 
-## 📂 Project Structure
+## 5. Folder Structure
 
 ```
 ClarifAI/
 │
-├── docs/                               # System & Security Architecture Documentation
-│   ├── Architecture.md
-│   ├── SystemDesign.md
-│   └── Security.md
-│
-├── data/                               # Sample Benchmark Support Documents
-│   ├── Spanish_RAG_Customer_Support.docx
-│   ├── german_support_doc.txt
-│   ├── hospital_data.txt
-│   └── sample_support_doc.txt
-│
-├── backend/                            # FastAPI REST API Server & RAG Engine
-│   ├── main.py                         # REST Endpoints & Security Middleware
-│   ├── rag.py                          # Hybrid Retrieval & RAG Pipeline
-│   ├── run_backend.py                  # Startup Runner Script
-│   ├── .env.example                    # Environment Template
-│   └── requirements.txt                # Python Dependencies
-│
-├── frontend/                           # React + Vite User Interface
-│   ├── public/                         # Static Assets
-│   ├── src/
-│   │   ├── components/                 # React UI Components
-│   │   ├── App.jsx                     # Root Component
-│   │   ├── App.css                     # Glassmorphic Stylesheet
-│   │   ├── index.css                   # Core Design Tokens
-│   │   └── main.jsx                    # React Entrypoint
-│   ├── index.html                      # HTML Entrypoint
-│   ├── package.json                    # Npm Dependencies & Scripts
-│   ├── vite.config.js                  # Vite Config
-│   ├── eslint.config.js                # Linter Config
-│   └── README.md                       # Frontend README
-│
-├── .env.example                        # Root Secrets Template
-└── README.md                           # Master Documentation & Setup Guide
+├── backend/
+├── frontend/
+├── data/
+├── README.md
+└── .env.example
 ```
 
 ---
 
-## 🚀 Quickstart & Installation
+## 6. Installation
 
 ### Prerequisites
-- **Python**: `3.10+`
-- **Node.js**: `18.0+` & `npm`
+- **Python**: `3.10` or higher
+- **Node.js**: `18.0` or higher & `npm`
 - **Google Gemini API Key**: [Get an API Key](https://aistudio.google.com/)
 
 ---
 
-### 1. Backend Setup
+### Backend Setup
 
-```bash
-# Navigate to backend directory
-cd backend
+1. Navigate to the backend directory:
+   ```bash
+   cd backend
+   ```
 
-# Create virtual environment
-python -m venv venv
+2. Create and activate a Python virtual environment:
+   ```bash
+   # Windows:
+   python -m venv venv
+   .\venv\Scripts\activate
 
-# Activate virtual environment
-# Windows:
-.\venv\Scripts\activate
-# Linux/macOS:
-source venv/bin/activate
+   # Linux / macOS:
+   python3 -m venv venv
+   source venv/bin/activate
+   ```
 
-# Install dependencies
-pip install -r requirements.txt
+3. Install required backend dependencies:
+   ```bash
+   pip install -r requirements.txt
+   ```
 
-# Create .env file from example
-cp .env.example .env
+4. Create environment configuration file from `.env.example`:
+   ```bash
+   # Create .env from template
+   cp .env.example .env
+   ```
 
-# Add your Gemini API key inside .env
-# GOOGLE_API_KEY=your_gemini_api_key_here
+5. Add your Google Gemini API key into `.env`:
+   ```env
+   GOOGLE_API_KEY=your_api_key_here
+   ```
 
-# Start backend server
-python run_backend.py
-```
-The API server will run at: `http://localhost:8000`
-
----
-
-### 2. Frontend Setup
-
-```bash
-# Navigate to frontend directory
-cd frontend
-
-# Install npm dependencies
-npm install
-
-# Start local development server
-npm run dev
-```
-The application interface will open at: `http://localhost:5173`
+6. Launch the backend server:
+   ```bash
+   python run_backend.py
+   ```
+   The backend API will start at: `http://localhost:8000`
 
 ---
 
-## 📖 Usage Guide
+### Frontend Setup
 
-1. **Upload Support Documents**: Drag & drop or select PDF, TXT, or Word files using the upload panel.
-2. **Ask Questions**: Type queries in plain English, German, Spanish, or Hindi in the chat input.
-3. **Inspect Citations**: Review grounded answers with clickable source tags and highlighted text passages.
-4. **Manage Documents**: View uploaded files and active vector chunks in the sidebar.
+1. Open a new terminal and navigate to the frontend directory:
+   ```bash
+   cd frontend
+   ```
+
+2. Install frontend npm packages:
+   ```bash
+   npm install
+   ```
+
+3. Start the frontend development server:
+   ```bash
+   npm run dev
+   ```
+
+4. Open your browser and navigate to:
+   ```
+   http://localhost:5173
+   ```
 
 ---
 
-## 🔒 Security Features
+## 7. Usage
 
-- **Binary Signature Inspection**: Validates magic bytes (`%PDF-`, `PK\x03\x04`, text UTF-8) to reject disguised executable files (`HTTP 415`).
+1. **Upload Documents**: Drag & drop or select PDF, TXT, or Word files in the document upload card.
+2. **Document Ingestion**: ClarifAI validates file signatures, parses text into section boundaries, extracts language metadata, and generates vector embeddings automatically.
+3. **Embedding Generation**: Vector embeddings are saved directly into the local FAISS vector index.
+4. **Ask Support Questions**: Type single or multi-part questions into the chat box.
+5. **Receive Grounded Answers**: ClarifAI retrieves exact matching document context and synthesizes a grounded response complete with verified source citations.
+
+---
+
+## 8. Sample Use Cases
+
+- **Customer Support**: Instantly query product return policies, shipping terms, and warranty coverage.
+- **Knowledge Base Assistance**: Search across technical documentation, software specs, and troubleshooting guides.
+- **Policy Documents**: Extract exact HR policies, compliance guidelines, and corporate procedures.
+- **Product Manuals**: Retrieve step-by-step device setup, specifications, and maintenance steps.
+- **Internal Documentation**: Index internal team onboarding material and operational SOPs.
+- **FAQ Assistant**: Automate repetitive support inquiries with grounded citations.
+
+---
+
+## 9. Security Highlights
+
+- **Magic-Byte Binary Validation**: Validates binary file signatures (`%PDF-`, `PK\x03\x04`, plain UTF-8 text) to reject disguised executables (`HTTP 415`).
+- **UUID Filename Storage**: Files are stored on disk with UUID prefixes (`{uuid}_{filename}`) to prevent name collision attacks while preserving original display filenames in the UI.
+- **Prompt Injection Mitigation**: Enforces strict XML boundaries (`<context>...</context>`) to isolate user inputs from model instructions.
+- **HTTP Security Headers**: Enforces `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, `X-XSS-Protection`, `HSTS`, and `Referrer-Policy`.
 - **Path Traversal Protection**: Enforces strict upload directory boundary checks (`is_safe_upload_path`).
-- **Sliding Window Rate Limiting**: Restricts `/chat` (30 req/min) and `/upload` (10 req/min) per IP.
-- **HTTP Response Security Headers**: Includes `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, `X-XSS-Protection`, and `Referrer-Policy`.
-- **UUID Filename Masking**: Strips internal 8-hex UUID prefixes from user-facing API responses to preserve privacy and display clean filenames.
+- **Sliding-Window Rate Limiting**: Protects `/chat` (30 req/min) and `/upload` (10 req/min) per IP address against DoS and quota exhaustion.
 
 ---
 
-## 📸 Screenshots
+## 10. Screenshots
 
-*(Add screenshots of the ClarifAI Dark & Light Mode Interface here)*
+![ClarifAI Home Page](https://raw.githubusercontent.com/SamGhodke/ClarifAI/main/screenshots/home_page.png)  
+*Figure 1: ClarifAI Glassmorphic Landing Page & Dashboard*
+
+![Document Upload Panel](https://raw.githubusercontent.com/SamGhodke/ClarifAI/main/screenshots/upload_panel.png)  
+*Figure 2: Interactive Drag & Drop Multi-Format Document Ingestion*
+
+![Chat Interface & Citations](https://raw.githubusercontent.com/SamGhodke/ClarifAI/main/screenshots/chat_interface.png)  
+*Figure 3: Grounded Conversational Q&A with Exact Document Citations*
+
+![Multilingual Q&A Demo](https://raw.githubusercontent.com/SamGhodke/ClarifAI/main/screenshots/multilingual_demo.png)  
+*Figure 4: Cross-Lingual Querying Across Multi-Language Knowledge Bases*
 
 ---
 
-## 🔮 Future Enhancements
+## 11. Future Enhancements
 
-- [ ] Support for OCR image document extraction (Tesseract / EasyOCR).
-- [ ] Role-based access control (RBAC) for enterprise document permissions.
-- [ ] Streaming WebSocket responses for instant token rendering.
-- [ ] Export chat history to PDF/Markdown support reports.
+- **OCR Support**: Integration with Tesseract / EasyOCR for extracting text from scanned PDF documents and images.
+- **Image Understanding**: Multimodal RAG support for querying diagrammatic user manuals and architecture diagrams.
+- **Authentication**: JWT & OAuth2 role-based access control (RBAC) for document-level permissions.
+- **Streaming Responses**: Server-Sent Events (SSE) / WebSocket streaming for real-time token rendering.
+- **Cloud Deployment**: One-click Docker containerization and Kubernetes deployment manifests.
+- **Additional Vector Databases**: Modular adapters for Qdrant, Milvus, and Pinecone vector stores.
 
 ---
 
-## 👤 Author
+## 12. Author
 
-Developed by **ClarifAI Team**. Built with FastAPI, LangChain, FAISS, Google Gemini, and React.
+Developed by **Sam Ghodke**. Built with FastAPI, LangChain, FAISS, Google Gemini, and React.
