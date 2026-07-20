@@ -160,27 +160,39 @@ async def global_exception_handler(request: Request, exc: Exception):
     )
 
 # ----------------------------------------------------
-# 5. RAG Service Initialization & Upload Cleanup
+# 5. Lazy RAG Service Singleton Getter (Thread-Safe)
 # ----------------------------------------------------
 UPLOADS_DIR = os.path.abspath("uploads")
 os.makedirs(UPLOADS_DIR, exist_ok=True)
 
-try:
-    rag_service = RAGService()
-    clear_uploads_flag = os.getenv("CLEAR_UPLOADS_ON_START", "false").lower() in ("true", "1", "yes")
-    if clear_uploads_flag and rag_service:
-        logger.info("[STARTUP] CLEAR_UPLOADS_ON_START is enabled. Clearing document session...")
-        rag_service.delete_all_uploaded_documents()
-        for filename in os.listdir(UPLOADS_DIR):
-            file_path = os.path.join(UPLOADS_DIR, filename)
-            if os.path.isfile(file_path):
+clear_uploads_flag = os.getenv("CLEAR_UPLOADS_ON_START", "false").lower() in ("true", "1", "yes")
+if clear_uploads_flag:
+    logger.info("[STARTUP] CLEAR_UPLOADS_ON_START is enabled. Clearing upload directory files on disk...")
+    for filename in os.listdir(UPLOADS_DIR):
+        file_path = os.path.join(UPLOADS_DIR, filename)
+        if os.path.isfile(file_path):
+            try:
+                os.remove(file_path)
+            except Exception as e:
+                logger.error(f"Error removing {filename} on startup: {e}")
+
+_rag_service_instance = None
+_rag_service_lock = threading.Lock()
+
+def get_rag_service() -> RAGService:
+    """Thread-safe lazy singleton getter for RAGService instance."""
+    global _rag_service_instance
+    if _rag_service_instance is None:
+        with _rag_service_lock:
+            if _rag_service_instance is None:
+                logger.info("[LAZY INIT] First request received. Instantiating RAGService...")
                 try:
-                    os.remove(file_path)
+                    _rag_service_instance = RAGService()
+                    logger.info("[LAZY INIT] RAGService instantiated successfully.")
                 except Exception as e:
-                    logger.error(f"Error removing {filename} on startup: {e}")
-except Exception as e:
-    logger.error(f"Error initializing RAG Service: {e}")
-    rag_service = None
+                    logger.error(f"[LAZY INIT] Error initializing RAGService: {e}", exc_info=True)
+                    raise HTTPException(status_code=500, detail="RAG Service failed to initialize.")
+    return _rag_service_instance
 
 # ----------------------------------------------------
 # 6. Helper Functions for Upload Security & Magic Bytes
@@ -268,7 +280,8 @@ class ChatRequest(BaseModel):
 # ----------------------------------------------------
 @app.post("/upload")
 async def upload_document(file: UploadFile = File(...)):
-    if not rag_service:
+    rag = get_rag_service()
+    if not rag:
         raise HTTPException(status_code=500, detail="RAG Service is not initialized. Check server logs.")
 
     if not file or not file.filename:
@@ -341,7 +354,7 @@ async def upload_document(file: UploadFile = File(...)):
     # 8. Safe Ingestion Execution
     try:
         logger.info(f"Ingesting file '{safe_name}' into RAG vector index...")
-        num_chunks = rag_service.ingest_document(file_path)
+        num_chunks = rag.ingest_document(file_path)
         logger.info(f"File '{safe_name}' ingested successfully: {num_chunks} chunks.")
         return {"message": "Document uploaded and processed successfully", "chunks": num_chunks, "filename": safe_name}
     except Exception as e:
@@ -355,6 +368,7 @@ async def list_documents():
     if not os.path.exists(UPLOADS_DIR):
         return []
     
+    rag = get_rag_service()
     docs = []
     for stored_filename in os.listdir(UPLOADS_DIR):
         file_path = os.path.join(UPLOADS_DIR, stored_filename)
@@ -365,8 +379,8 @@ async def list_documents():
             document_type = os.path.splitext(display_name)[1].replace(".", "").upper()
             
             chunks_count = 0
-            if rag_service and rag_service.vector_store:
-                for doc_id, doc in rag_service.vector_store.docstore._dict.items():
+            if rag and rag.vector_store:
+                for doc_id, doc in rag.vector_store.docstore._dict.items():
                     source = doc.metadata.get("source", "")
                     normalized_source = os.path.normpath(source).replace("\\", "/")
                     normalized_target = os.path.normpath(file_path).replace("\\", "/")
@@ -397,9 +411,10 @@ async def delete_document(filename: str):
     if not matching_file_path or not is_safe_upload_path(matching_file_path) or not os.path.exists(matching_file_path):
         raise HTTPException(status_code=404, detail="File not found.")
         
-    if rag_service:
+    rag = get_rag_service()
+    if rag:
         try:
-            rag_service.delete_document(matching_file_path)
+            rag.delete_document(matching_file_path)
         except Exception as e:
             logger.error(f"Error removing chunks from FAISS vector store: {e}")
             
@@ -415,11 +430,12 @@ async def delete_document(filename: str):
 
 @app.delete("/documents")
 async def delete_all_documents():
-    if not rag_service:
+    rag = get_rag_service()
+    if not rag:
         raise HTTPException(status_code=500, detail="RAG Service not initialized.")
         
     try:
-        rag_service.delete_all_uploaded_documents()
+        rag.delete_all_uploaded_documents()
     except Exception as e:
         logger.error(f"Error clearing FAISS index: {e}")
         
@@ -438,12 +454,13 @@ async def delete_all_documents():
 
 @app.post("/chat")
 async def chat(request: ChatRequest):
-    if not rag_service:
+    rag = get_rag_service()
+    if not rag:
         raise HTTPException(status_code=500, detail="RAG Service is not initialized. Check server logs.")
     
     try:
         history_list = [msg.dict() for msg in request.history]
-        response = rag_service.ask_question(
+        response = rag.ask_question(
             request.question, 
             history=history_list
         )
