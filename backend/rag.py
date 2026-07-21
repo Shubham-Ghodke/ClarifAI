@@ -4,7 +4,6 @@ import traceback
 import numpy as np
 from dotenv import load_dotenv
 load_dotenv()
-from langchain_community.document_loaders import PyPDFLoader, TextLoader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_community.vectorstores import FAISS
 from langchain_core.prompts import PromptTemplate
@@ -952,18 +951,8 @@ class RAGService:
         
     @property
     def hf_embeddings(self):
-        if self._hf_embeddings is None:
-            try:
-                print("[LAZY] Initializing local HuggingFace embeddings...")
-                from langchain_huggingface import HuggingFaceEmbeddings
-                self._hf_embeddings = HuggingFaceEmbeddings(
-                    model_name="sentence-transformers/all-MiniLM-L6-v2"
-                )
-                print("[OK] Local HuggingFace embeddings initialized for semantic matching")
-            except Exception as e:
-                print(f"[WARNING] Could not initialize local HF embeddings: {e}")
-                self._hf_embeddings = None
-        return self._hf_embeddings
+        """Returns the primary Google Generative AI embeddings instance."""
+        return getattr(self, "embeddings", None)
 
     def load_global_metadata(self) -> dict:
         import json
@@ -2041,6 +2030,7 @@ User Query: {query}
     def _load_any_document(self, file_path: str):
         """Loads a document supporting PDF, Word, TXT, and Excel formats."""
         from langchain_core.documents import Document
+        from langchain_community.document_loaders import PyPDFLoader, TextLoader
         ext = os.path.splitext(file_path)[1].lower()
         
         if ext == '.pdf':
