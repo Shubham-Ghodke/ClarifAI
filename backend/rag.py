@@ -1991,9 +1991,16 @@ User Query: {query}
             loader = TextLoader(file_path, encoding='utf-8')
             return loader.load()
         elif ext == '.docx':
-            import docx2txt
-            text = docx2txt.process(file_path)
-            return [Document(page_content=text, metadata={"source": file_path})]
+            print("Loading DOCX using docx2txt")
+            try:
+                import docx2txt
+                text = docx2txt.process(file_path)
+                return [Document(page_content=text, metadata={"source": file_path})]
+            except Exception as e:
+                import traceback
+                print(f"[LOADER ERROR] Failed loading DOCX file: {e}")
+                traceback.print_exc()
+                raise e
         elif ext == '.doc':
             try:
                 import win32com.client
