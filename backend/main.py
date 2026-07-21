@@ -279,6 +279,23 @@ class ChatRequest(BaseModel):
             raise ValueError("History exceeds maximum limit of 50 messages.")
         return v
 
+def is_gemini_quota_error(exc: Exception) -> bool:
+    """Detects Google Gemini embedding/LLM API quota or rate-limit (HTTP 429 / RESOURCE_EXHAUSTED) errors."""
+    if not exc:
+        return False
+    msg = str(exc).lower()
+    type_name = type(exc).__name__.lower()
+    quota_indicators = [
+        "429",
+        "resource_exhausted",
+        "quota_exceeded",
+        "quota exceeded",
+        "rate limit",
+        "ratelimit",
+        "too many requests"
+    ]
+    return any(indicator in msg for indicator in quota_indicators) or any(indicator in type_name for indicator in quota_indicators)
+
 # ----------------------------------------------------
 # 8. Secure API Endpoints
 # ----------------------------------------------------
@@ -364,7 +381,17 @@ async def upload_document(file: UploadFile = File(...)):
     except Exception as e:
         logger.error(f"Error ingesting document '{safe_name}': {e}", exc_info=True)
         if os.path.exists(file_path):
-            os.remove(file_path)
+            try:
+                os.remove(file_path)
+                logger.info(f"Cleaned up failed upload file '{safe_name}' from disk.")
+            except Exception as rm_err:
+                logger.error(f"Error removing failed upload file '{file_path}': {rm_err}")
+                
+        if is_gemini_quota_error(e):
+            raise HTTPException(
+                status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+                detail="Google Gemini embedding quota exceeded. Please wait a few seconds and try uploading again."
+            )
         raise HTTPException(status_code=500, detail="Error processing and indexing document content.")
 
 @app.get("/documents")
