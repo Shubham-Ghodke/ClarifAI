@@ -15,7 +15,6 @@ from fastapi import FastAPI, UploadFile, File, HTTPException, Request, Response,
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, field_validator
-from rag import RAGService
 
 # Setup logger
 log_level = os.getenv("LOG_LEVEL", "INFO").upper()
@@ -179,7 +178,7 @@ if clear_uploads_flag:
 _rag_service_instance = None
 _rag_service_lock = threading.Lock()
 
-def get_rag_service() -> RAGService:
+def get_rag_service():
     """Thread-safe lazy singleton getter for RAGService instance."""
     global _rag_service_instance
     if _rag_service_instance is None:
@@ -187,6 +186,7 @@ def get_rag_service() -> RAGService:
             if _rag_service_instance is None:
                 logger.info("[LAZY INIT] First request received. Instantiating RAGService...")
                 try:
+                    from rag import RAGService
                     _rag_service_instance = RAGService()
                     logger.info("[LAZY INIT] RAGService instantiated successfully.")
                 except Exception as e:
