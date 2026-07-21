@@ -31,7 +31,7 @@ app = FastAPI(
 # 1. Environment & Configurable Limits
 # ----------------------------------------------------
 raw_origins = os.getenv("ALLOWED_ORIGINS", "http://localhost:5173,http://127.0.0.1:5173").strip()
-allowed_origins = [origin.strip() for origin in raw_origins.split(",") if origin.strip() and origin.strip() != "*"]
+allowed_origins = [origin.strip().rstrip("/") for origin in raw_origins.split(",") if origin.strip() and origin.strip() != "*"]
 if not allowed_origins:
     allowed_origins = ["http://localhost:5173", "http://127.0.0.1:5173"]
 
@@ -94,6 +94,8 @@ QUOTA_ENDPOINTS = ("/chat", "/upload", "/documents")
 
 @app.middleware("http")
 async def daily_quota_middleware(request: Request, call_next):
+    if request.method == "OPTIONS":
+        return await call_next(request)
     path = request.url.path
     if any(path.startswith(prefix) for prefix in QUOTA_ENDPOINTS):
         if not daily_quota_limiter.is_allowed():
@@ -131,6 +133,8 @@ RATE_LIMITS = {
 
 @app.middleware("http")
 async def rate_limit_middleware(request: Request, call_next):
+    if request.method == "OPTIONS":
+        return await call_next(request)
     client_ip = request.client.host if request.client else "127.0.0.1"
     path = request.url.path
     
