@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { UploadIcon, FileIcon, CheckIcon, TrashIcon } from './icons';
 import '../App.css';
 
+const API_URL = import.meta.env.VITE_API_URL || "http://127.0.0.1:8000";
+
 const FileUpload = () => {
     const [files, setFiles] = useState([]);
     const [status, setStatus] = useState("");
@@ -13,7 +15,7 @@ const FileUpload = () => {
     const fetchDocuments = async () => {
         setLoadingDocs(true);
         try {
-            const response = await fetch("http://127.0.0.1:8000/documents");
+            const response = await fetch(`${API_URL}/documents`);
             if (response.ok) {
                 const data = await response.json();
                 setDocuments(data);
@@ -34,7 +36,7 @@ const FileUpload = () => {
                 setLoadingDocs(true);
                 try {
                     console.log("[SESSION] First time load, clearing previous documents...");
-                    const response = await fetch("http://127.0.0.1:8000/documents", {
+                    const response = await fetch(`${API_URL}/documents`, {
                         method: "DELETE"
                     });
                     if (response.ok) {
@@ -119,7 +121,7 @@ const FileUpload = () => {
             formData.append("file", fileToUpload);
 
             try {
-                const response = await fetch("http://127.0.0.1:8000/upload", {
+                const response = await fetch(`${API_URL}/upload`, {
                     method: "POST",
                     body: formData,
                 });
@@ -159,7 +161,7 @@ const FileUpload = () => {
 
         try {
             setStatus(`Deleting ${filename}...`);
-            const response = await fetch(`http://127.0.0.1:8000/documents/${encodeURIComponent(filename)}`, {
+            const response = await fetch(`${API_URL}/documents/${encodeURIComponent(filename)}`, {
                 method: "DELETE"
             });
 
@@ -182,7 +184,7 @@ const FileUpload = () => {
 
         try {
             setStatus("Deleting all documents...");
-            const response = await fetch("http://127.0.0.1:8000/documents", {
+            const response = await fetch(`${API_URL}/documents`, {
                 method: "DELETE"
             });
 
