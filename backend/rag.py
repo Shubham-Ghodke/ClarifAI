@@ -1,5 +1,6 @@
 import os
 import pickle
+import traceback
 import numpy as np
 from dotenv import load_dotenv
 load_dotenv()
@@ -833,45 +834,69 @@ def detect_mentioned_document(query, filenames):
 
 class RAGService:
     def __init__(self):
-        self.vector_store_path = "./faiss_index"
-        self.similarity_threshold = float(os.getenv("RAG_SIMILARITY_THRESHOLD", "0.15"))
-        self.mismatch_penalty_value = float(os.getenv("RAG_MISMATCH_PENALTY", "-40.0"))
-        self.debug = os.getenv("RAG_DEBUG", "True").lower() == "true"
+        print("[INIT DIAGNOSTIC] STEP 1 - Entering RAGService.__init__")
         
-        # Check for API Key
-        api_key = os.getenv("GOOGLE_API_KEY")
-        self.api_key = api_key
-        self.USE_GEMINI = USE_GEMINI
-        self.llm = None
-        self.using_gemini_llm = False
-        self.llm_quota_exceeded = False
-        
-        # Try to use Gemini, fall back to local embeddings if quota exceeded
+        # STEP 2 - Reading environment variables & setting config parameters
         try:
-            if api_key and USE_GEMINI:
-                print("Attempting to use Google Gemini embeddings...")
-                self.embeddings = GoogleGenerativeAIEmbeddings(model="models/gemini-embedding-001", max_retries=1)
-                print("[OK] Google Gemini embeddings initialized")
-                self.using_gemini_embeddings = True
-            else:
-                raise ValueError("No API key or Gemini not available")
+            print("[INIT DIAGNOSTIC] STEP 2 - Reading environment variables & config parameters")
+            self.vector_store_path = "./faiss_index"
+            self.similarity_threshold = float(os.getenv("RAG_SIMILARITY_THRESHOLD", "0.15"))
+            self.mismatch_penalty_value = float(os.getenv("RAG_MISMATCH_PENALTY", "-40.0"))
+            self.debug = os.getenv("RAG_DEBUG", "True").lower() == "true"
+            
+            api_key = os.getenv("GOOGLE_API_KEY")
+            self.api_key = api_key
+            self.USE_GEMINI = USE_GEMINI
+            self.llm = None
+            self.using_gemini_llm = False
+            self.llm_quota_exceeded = False
+            print(f"[INIT DIAGNOSTIC] STEP 2 OK - Config set. GOOGLE_API_KEY present: {bool(api_key)}, USE_GEMINI: {USE_GEMINI}")
         except Exception as e:
-            print(f"[WARNING] Google Gemini embeddings unavailable (quota or error): {e}")
-            print("-> Falling back to local HuggingFace embeddings (all-MiniLM-L6-v2)")
-            # Use local embeddings as fallback
-            from langchain_huggingface import HuggingFaceEmbeddings
-            self.embeddings = HuggingFaceEmbeddings(
-                model_name="sentence-transformers/all-MiniLM-L6-v2"
-            )
-            self.using_gemini_embeddings = False
-            print("[OK] Local embeddings initialized successfully")
-        
-        # Try to initialize Gemini LLM separately (for answer generation)
-        self.try_init_llm()
-        
-        # Initialize or load Vector Store
-        if os.path.exists(f"{self.vector_store_path}.pkl"):
-            try:
+            print(f"[INIT DIAGNOSTIC ERROR] Failed at STEP 2 (Config): {e}")
+            traceback.print_exc()
+            raise e
+
+        # STEP 3 - Creating Gemini embedding object
+        try:
+            print("[INIT DIAGNOSTIC] STEP 3 - Creating Gemini embedding object")
+            if not api_key or not USE_GEMINI:
+                raise ValueError(f"GOOGLE_API_KEY is missing (present: {bool(api_key)}) or USE_GEMINI is False ({USE_GEMINI})")
+            self.embeddings = GoogleGenerativeAIEmbeddings(model="models/gemini-embedding-001", max_retries=1)
+            self.using_gemini_embeddings = True
+            print("[INIT DIAGNOSTIC] STEP 3 OK - GoogleGenerativeAIEmbeddings object instantiated")
+        except Exception as e:
+            print(f"[INIT DIAGNOSTIC ERROR] Failed at STEP 3 (Creating Gemini Embeddings): {e}")
+            print("[DIAGNOSTIC NOTICE] HuggingFace fallback disabled for debugging per requirements.")
+            traceback.print_exc()
+            raise e
+
+        # STEP 4 - Testing Gemini embedding with embed_query("hello")
+        try:
+            print("[INIT DIAGNOSTIC] STEP 4 - Testing Gemini embedding with embed_query('hello')")
+            test_emb = self.embeddings.embed_query("hello")
+            print(f"[INIT DIAGNOSTIC] STEP 4 OK - Gemini embedding test successful! Received dimension: {len(test_emb)}")
+        except Exception as e:
+            print(f"[INIT DIAGNOSTIC ERROR] Failed at STEP 4 (Testing Gemini Embeddings embed_query): {e}")
+            traceback.print_exc()
+            raise e
+
+        # STEP 5 - Gemini embeddings initialized successfully
+        print("[INIT DIAGNOSTIC] STEP 5 - Gemini embeddings initialized successfully")
+
+        # STEP 6 - Initializing Gemini LLM
+        try:
+            print("[INIT DIAGNOSTIC] STEP 6 - Initializing Gemini LLM")
+            self.try_init_llm()
+            print(f"[INIT DIAGNOSTIC] STEP 6 OK - Gemini LLM initialized (using_gemini_llm: {self.using_gemini_llm})")
+        except Exception as e:
+            print(f"[INIT DIAGNOSTIC ERROR] Failed at STEP 6 (Initializing Gemini LLM): {e}")
+            traceback.print_exc()
+            raise e
+
+        # STEP 7 - Loading FAISS index
+        try:
+            print("[INIT DIAGNOSTIC] STEP 7 - Loading FAISS index")
+            if os.path.exists(f"{self.vector_store_path}.pkl"):
                 with open(f"{self.vector_store_path}.pkl", "rb") as f:
                     loaded_store = pickle.load(f)
                 if loaded_store:
@@ -881,35 +906,49 @@ class RAGService:
                     if expected_dim == actual_dim:
                         self.vector_store = loaded_store
                         self.vector_store.embedding_function = self.embeddings
-                        print(f"[OK] Loaded existing vector store from {self.vector_store_path}.pkl")
+                        print(f"[INIT DIAGNOSTIC] STEP 7 OK - Loaded existing vector store from {self.vector_store_path}.pkl (FAISS vectors: {loaded_store.index.ntotal})")
                     else:
-                        print(f"[WARNING] Dimension mismatch: expected {expected_dim}, got {actual_dim} from loaded store. Starting fresh.")
+                        print(f"[INIT DIAGNOSTIC WARNING] Dimension mismatch: expected {expected_dim}, got {actual_dim}. Starting fresh.")
                         self.vector_store = None
                 else:
                     self.vector_store = None
-            except Exception as e:
-                print(f"[WARNING] Could not load existing vector store: {e}")
+            else:
+                print(f"[INIT DIAGNOSTIC] STEP 7 OK - No existing vector store file found at {self.vector_store_path}.pkl")
                 self.vector_store = None
-        else:
-            self.vector_store = None
-        
-        self.retriever = None
-        self._hf_embeddings = None
-        self.global_doc_words = set()
-        
-        # Configurable semantic thresholds (for Gemini and local HuggingFace embeddings)
-        self.semantic_threshold_gemini = 0.58
-        self.semantic_threshold_hf = 0.25
-        
-        # Configurable default retrieval limit
-        self.k = 12
-        
-        # In-memory caches to avoid redundant/costly LLM API calls and speed up execution
-        self.translation_cache = {}  # key: (text, lang_to) -> translated_text
-        self.query_parse_cache = {}  # key: (query, history_str) -> list of semantic units
-        self.lang_detect_cache = {}  # key: text_hash -> lang_str
-        
-        self.populate_global_doc_words()
+        except Exception as e:
+            print(f"[INIT DIAGNOSTIC ERROR] Failed at STEP 7 (Loading FAISS Index): {e}")
+            traceback.print_exc()
+            raise e
+
+        # STEP 8 - Loading metadata & initializing caches
+        try:
+            print("[INIT DIAGNOSTIC] STEP 8 - Loading metadata & initializing caches")
+            self.retriever = None
+            self._hf_embeddings = None
+            self.semantic_threshold_gemini = 0.58
+            self.semantic_threshold_hf = 0.25
+            self.k = 12
+            self.translation_cache = {}  # key: (text, lang_to) -> translated_text
+            self.query_parse_cache = {}  # key: (query, history_str) -> list of semantic units
+            self.lang_detect_cache = {}  # key: text_hash -> lang_str
+            print("[INIT DIAGNOSTIC] STEP 8 OK - Caches and metadata thresholds set")
+        except Exception as e:
+            print(f"[INIT DIAGNOSTIC ERROR] Failed at STEP 8 (Loading Metadata): {e}")
+            traceback.print_exc()
+            raise e
+
+        # STEP 9 - Populating global document words
+        try:
+            print("[INIT DIAGNOSTIC] STEP 9 - Populating global document words")
+            self.global_doc_words = set()
+            self.populate_global_doc_words()
+            print(f"[INIT DIAGNOSTIC] STEP 9 OK - Global document words populated (Count: {len(self.global_doc_words)})")
+        except Exception as e:
+            print(f"[INIT DIAGNOSTIC ERROR] Failed at STEP 9 (Populating Global Doc Words): {e}")
+            traceback.print_exc()
+            raise e
+
+        print("[INIT DIAGNOSTIC] STEP 10 - RAGService initialization complete!")
         
     @property
     def hf_embeddings(self):
